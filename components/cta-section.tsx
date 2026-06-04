@@ -1,8 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mail, MapPin, Phone, ArrowRight, Star, Check, AlertCircle } from 'lucide-react'
-import { useState } from 'react'
+import { Mail, MapPin, Phone, ArrowRight, Star, Check, AlertCircle, Loader } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
 import { Shared3DBackground } from './shared-3d-background'
 import { sendContactEmail } from '@/app/actions/send-email'
 
@@ -34,32 +34,117 @@ export function CTASection() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const submissionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Debounce feedback clearing
+  const clearFeedbackAfterDelay = useCallback((delay: number = 8000) => {
+    if (submissionTimeoutRef.current) {
+      clearTimeout(submissionTimeoutRef.current)
+    }
+    
+    submissionTimeoutRef.current = setTimeout(() => {
+      setFeedback(null)
+    }, delay)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (feedback) setFeedback(null)
+    // Clear error when user starts typing
+    if (feedback?.type === 'error') {
+      setFeedback(null)
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    // Prevent duplicate submissions
+    if (isLoading || hasSubmitted) {
+      return
+    }
+
+    // Basic client-side validation
+    if (!formData.name.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter your name' })
+      return
+    }
+
+    if (!formData.email.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter your email' })
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setFeedback({ type: 'error', message: 'Please enter a valid email address' })
+      return
+    }
+
+    if (!formData.message.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter your message' })
+      return
+    }
+
+    if (formData.message.length < 10) {
+      setFeedback({ type: 'error', message: 'Message must be at least 10 characters' })
+      return
+    }
+
     setIsLoading(true)
     setFeedback(null)
+    setHasSubmitted(true)
 
     try {
-      const result = await sendContactEmail(formData)
-      
+      // Disable form while submitting
+      if (formRef.current) {
+        const inputs = formRef.current.querySelectorAll('input, textarea')
+        inputs.forEach(input => (input as HTMLInputElement | HTMLTextAreaElement).disabled = true)
+      }
+
+      // Submit with timeout
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
+      )
+
+      const submitPromise = sendContactEmail(formData)
+      const result = (await Promise.race([submitPromise, timeoutPromise])) as Awaited<ReturnType<typeof sendContactEmail>>
+
       if (result.success) {
-        setFeedback({ type: 'success', message: result.message || 'Email sent successfully!' })
+        setFeedback({ 
+          type: 'success', 
+          message: result.message || 'Thank you! Your message has been sent successfully.' 
+        })
         setFormData({ name: '', email: '', message: '' })
+        clearFeedbackAfterDelay(8000)
       } else {
-        setFeedback({ type: 'error', message: result.error || 'An error occurred' })
+        setFeedback({ 
+          type: 'error', 
+          message: result.error || 'An error occurred while sending your message' 
+        })
+        clearFeedbackAfterDelay(6000)
       }
     } catch (error) {
-      console.error('[v0] Form submission error:', error)
-      setFeedback({ type: 'error', message: 'An error occurred. Please try again.' })
+      console.error('[Contact Form] Submission error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      setFeedback({ 
+        type: 'error', 
+        message: errorMessage === 'Request timeout' 
+          ? 'Request timed out. Please try again.' 
+          : `Error: ${errorMessage}` 
+      })
+      clearFeedbackAfterDelay(6000)
     } finally {
       setIsLoading(false)
+      setHasSubmitted(false)
+      
+      // Re-enable form
+      if (formRef.current) {
+        const inputs = formRef.current.querySelectorAll('input, textarea')
+        inputs.forEach(input => (input as HTMLInputElement | HTMLTextAreaElement).disabled = false)
+      }
     }
   }
 
@@ -182,6 +267,7 @@ export function CTASection() {
 
           {/* Contact Form - Centered */}
           <motion.form
+            ref={formRef}
             onSubmit={handleSubmit}
             className="w-full max-w-lg"
             variants={itemVariants}
@@ -194,7 +280,7 @@ export function CTASection() {
                 {/* Name Input */}
                 <motion.div
                   className="group"
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={{ scale: isLoading ? 1 : 1.01 }}
                 >
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Your Name
@@ -204,8 +290,9 @@ export function CTASection() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
+                    disabled={isLoading}
                     placeholder="Enter your name"
-                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300"
+                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     whileFocus={{
                       boxShadow: '0 0 20px rgba(34, 197, 94, 0.2)',
                     }}
@@ -215,7 +302,7 @@ export function CTASection() {
                 {/* Email Input */}
                 <motion.div
                   className="group"
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={{ scale: isLoading ? 1 : 1.01 }}
                 >
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Email Address
@@ -225,8 +312,9 @@ export function CTASection() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    disabled={isLoading}
                     placeholder="your.email@example.com"
-                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300"
+                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     whileFocus={{
                       boxShadow: '0 0 20px rgba(34, 197, 94, 0.2)',
                     }}
@@ -236,7 +324,7 @@ export function CTASection() {
                 {/* Message Textarea */}
                 <motion.div
                   className="group"
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={{ scale: isLoading ? 1 : 1.01 }}
                 >
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Message
@@ -245,19 +333,26 @@ export function CTASection() {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
+                    disabled={isLoading}
                     placeholder="Share your message or opportunity..."
                     rows={4}
-                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300 resize-none"
+                    className="w-full px-4 py-3 rounded-lg border border-green-500/20 bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-500/50 focus:bg-green-500/5 transition-all duration-300 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                     whileFocus={{
                       boxShadow: '0 0 20px rgba(34, 197, 94, 0.2)',
                     }}
                   />
                 </motion.div>
 
+                {/* Character count for message */}
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>{formData.message.length} characters</span>
+                  <span>{Math.max(0, 5000 - formData.message.length)} remaining</span>
+                </div>
+
                 {/* Feedback Message */}
                 {feedback && (
                   <motion.div
-                    className={`p-4 rounded-lg flex items-center gap-3 ${
+                    className={`p-4 rounded-lg flex items-start gap-3 ${
                       feedback.type === 'success'
                         ? 'bg-green-500/10 border border-green-500/30 text-green-400'
                         : 'bg-red-500/10 border border-red-500/30 text-red-400'
@@ -266,32 +361,39 @@ export function CTASection() {
                     animate={{ opacity: 1, y: 0 }}
                   >
                     {feedback.type === 'success' ? (
-                      <Check className="w-5 h-5 flex-shrink-0" />
+                      <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     ) : (
-                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     )}
-                    <span className="text-sm">{feedback.message}</span>
+                    <span className="text-sm flex-1">{feedback.message}</span>
                   </motion.div>
                 )}
 
                 {/* Submit Button */}
                 <motion.button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || hasSubmitted}
                   className={`w-full py-3 px-6 rounded-lg font-semibold text-white bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 transition-all duration-300 flex items-center justify-center gap-2 group ${
-                    isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    isLoading || hasSubmitted ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg'
                   }`}
-                  whileHover={!isLoading ? { scale: 1.02 } : {}}
-                  whileTap={!isLoading ? { scale: 0.98 } : {}}
+                  whileHover={!isLoading && !hasSubmitted ? { scale: 1.02 } : {}}
+                  whileTap={!isLoading && !hasSubmitted ? { scale: 0.98 } : {}}
                 >
-                  {isLoading ? 'Sending...' : 'Send Message'}
-                  {!isLoading && (
-                    <motion.span
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <ArrowRight className="w-5 h-5" />
-                    </motion.span>
+                  {isLoading ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send Message</span>
+                      <motion.span
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <ArrowRight className="w-5 h-5" />
+                      </motion.span>
+                    </>
                   )}
                 </motion.button>
               </div>
