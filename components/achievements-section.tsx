@@ -89,7 +89,7 @@ function FloatingParticle({ delay, duration, size, left }: { delay: number; dura
         duration,
         delay,
         repeat: Infinity,
-        ease: "easeOut",
+        // Removed invalid ease property
       }}
     />
   )

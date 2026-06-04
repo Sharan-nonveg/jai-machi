@@ -386,7 +386,7 @@ export function GallerySection() {
               className="h-full bg-gradient-to-r from-primary to-yellow-500"
               initial={{ width: "0%" }}
               animate={{ width: isAutoPlaying ? "100%" : `${((activeIndex + 1) / galleryImages.length) * 100}%` }}
-              transition={isAutoPlaying ? { duration: 4, ease: "linear" } : { duration: 0.3 }}
+              transition={isAutoPlaying ? { duration: 4 } : { duration: 0.3 }}
               key={isAutoPlaying ? `auto-${activeIndex}` : 'manual'}
             />
           </div>

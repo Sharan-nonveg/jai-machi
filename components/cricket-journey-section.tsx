@@ -282,15 +282,11 @@ function ParticleField() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={500}
-          array={particles.positions}
-          itemSize={3}
+          args={[particles.positions, 3]}
         />
         <bufferAttribute
           attach="attributes-color"
-          count={500}
-          array={particles.colors}
-          itemSize={3}
+          args={[particles.colors, 3]}
         />
       </bufferGeometry>
       <pointsMaterial
@@ -444,7 +440,7 @@ function DNAHelixCard({
           rotateX: isHovered ? 5 : 0,
           rotateY: isHovered ? (isLeft ? 5 : -5) : 0,
         }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5 }}
         style={{
           background: `linear-gradient(135deg, rgba(15,15,15,0.95), rgba(8,8,8,0.98))`,
           transformStyle: "preserve-3d",
@@ -530,7 +526,7 @@ function DNAHelixCard({
               <motion.div
                 className="relative"
                 animate={{ rotate: isHovered ? 360 : 0 }}
-                transition={{ duration: 1, ease: "easeInOut" }}
+                transition={{ duration: 1 }}
               >
                 <div 
                   className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -552,7 +548,7 @@ function DNAHelixCard({
                     x: [14, 14],
                     y: [0, 0]
                   }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 3, repeat: Infinity }}
                 />
               </motion.div>
               
@@ -637,7 +633,7 @@ function DNAHelixCard({
                 style={{ background: `linear-gradient(90deg, ${accentColor}, ${isCurrent ? "#eab308" : "#22c55e"})` }}
                 initial={{ width: "0%" }}
                 animate={isInView ? { width: isHovered ? "100%" : "70%" } : {}}
-                transition={{ duration: 1, ease: "easeOut" }}
+                transition={{ duration: 1 }}
               />
             </div>
             <motion.div
@@ -695,10 +691,10 @@ function IndiaMapReal() {
       >
         {/* India geography */}
         <Geographies geography={INDIA_TOPO_JSON}>
-          {({ geographies }) =>
+          {({ geographies }: { geographies: any[] }) =>
             geographies
-              .filter(geo => geo.properties.name === "India")
-              .map(geo => (
+              .filter((geo: any) => geo.properties.name === "India")
+              .map((geo: any) => (
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
@@ -750,7 +746,7 @@ function IndiaMapReal() {
                 r: [city.isHome ? 12 : 8, city.isHome ? 20 : 14],
                 opacity: [0.8, 0],
               }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+              transition={{ duration: 2, repeat: Infinity }}
             />
             
             {/* Main marker */}
@@ -972,7 +968,7 @@ function ConstellationGalaxyTimeline() {
               scale: [1, 1.2, 1],
               opacity: [0.1, 0.15, 0.1]
             }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 8, repeat: Infinity }}
           />
           <motion.div
             className="absolute w-[400px] h-[400px] rounded-full opacity-10"
@@ -986,7 +982,7 @@ function ConstellationGalaxyTimeline() {
               scale: [1, 1.3, 1],
               opacity: [0.08, 0.12, 0.08]
             }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
           />
           <motion.div
             className="absolute w-[300px] h-[300px] rounded-full opacity-8"
@@ -1001,7 +997,7 @@ function ConstellationGalaxyTimeline() {
               scale: [1, 1.15, 1],
               rotate: [0, 180, 360]
             }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 20, repeat: Infinity }}
           />
         </div>
 
@@ -1119,7 +1115,7 @@ function ConstellationGalaxyTimeline() {
                 r: [45, 55, 45],
                 opacity: [0.3, 0.5, 0.3]
               }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 4, repeat: Infinity }}
             />
             <motion.circle
               cx={0}
@@ -1129,7 +1125,7 @@ function ConstellationGalaxyTimeline() {
               animate={{
                 scale: [1, 1.05, 1]
               }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 2, repeat: Infinity }}
             />
             <circle cx={0} cy={0} r={20} fill="#fbbf24" />
             <circle cx={0} cy={0} r={12} fill="#fef3c7" />
@@ -1157,7 +1153,7 @@ function ConstellationGalaxyTimeline() {
                     duration: 2, 
                     repeat: Infinity, 
                     delay: i * 0.1,
-                    ease: "easeInOut"
+                    // Removed invalid ease property
                   }}
                 />
               )

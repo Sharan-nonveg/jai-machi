@@ -1,30 +1,25 @@
 'use client'
 
 import { Suspense, useRef, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 function AnimatedBackground() {
   const groupRef = useRef<THREE.Group>(null)
 
-  useEffect(() => {
-    const animate = () => {
-      if (groupRef.current) {
-        groupRef.current.rotation.x += 0.0002
-        groupRef.current.rotation.y += 0.0005
-      }
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.rotation.x += 0.0001
+      groupRef.current.rotation.y += 0.0003
     }
-
-    const interval = setInterval(animate, 16)
-    return () => clearInterval(interval)
-  }, [])
+  })
 
   return (
     <group ref={groupRef}>
-      {/* Cricket Ball */}
+      {/* Cricket Ball - simplified geometry for performance */}
       <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[1.2, 32, 32]} />
+        <sphereGeometry args={[1.2, 24, 24]} />
         <meshStandardMaterial
           color="#dc2626"
           metalness={0.6}
@@ -34,9 +29,9 @@ function AnimatedBackground() {
         />
       </mesh>
 
-      {/* Seams on Ball */}
+      {/* Seams on Ball - simplified */}
       <mesh position={[0, 0, 0]}>
-        <torusGeometry args={[1.2, 0.08, 8, 100]} />
+        <torusGeometry args={[1.2, 0.08, 8, 48]} />
         <meshStandardMaterial color="#ffffff" metalness={0.8} roughness={0.2} />
       </mesh>
 
@@ -44,7 +39,7 @@ function AnimatedBackground() {
       {[0, 1, 2].map((i) => (
         <group key={i} rotation={[0, (i * Math.PI * 2) / 3, 0]}>
           <mesh position={[4, 0, 0]}>
-            <cylinderGeometry args={[0.15, 0.15, 2, 16]} />
+            <cylinderGeometry args={[0.15, 0.15, 2, 12]} />
             <meshStandardMaterial color="#16a34a" emissive="#15803d" emissiveIntensity={0.5} />
           </mesh>
         </group>
@@ -66,9 +61,9 @@ function AnimatedBackground() {
       ))}
 
       {/* Ambient Light */}
-      <pointLight position={[5, 5, 5]} intensity={0.8} color="#ffffff" />
-      <pointLight position={[-5, -5, 5]} intensity={0.4} color="#16a34a" />
-      <ambientLight intensity={0.6} />
+      <pointLight position={[5, 5, 5]} intensity={0.6} color="#ffffff" />
+      <pointLight position={[-5, -5, 5]} intensity={0.3} color="#16a34a" />
+      <ambientLight intensity={0.4} />
     </group>
   )
 }
@@ -91,10 +86,11 @@ export function Shared3DBackground() {
           alpha: true,
           powerPreference: 'high-performance',
           stencil: false,
-          depth: true,
+          depth: false,
+          preserveDrawingBuffer: false,
         }}
         dpr={[1, 1.5]}
-        frameloop="always"
+        frameloop="demand"
       >
         <Suspense fallback={null}>
           <AnimatedBackground />

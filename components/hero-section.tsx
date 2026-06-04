@@ -45,15 +45,15 @@ function CricketBall({ mousePosition }: { mousePosition: React.MutableRefObject<
 
   return (
     <Trail
-      width={3}
-      length={10}
+      width={2}
+      length={8}
       color={new THREE.Color("#22c55e")}
       attenuation={(t) => t * t}
     >
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
         <group ref={groupRef} scale={0.9}>
           <mesh castShadow>
-            <sphereGeometry args={[1, 64, 64]} />
+            <sphereGeometry args={[1, 24, 24]} />
             <meshPhysicalMaterial
               color="#8B0000"
               roughness={0.3}
@@ -67,13 +67,13 @@ function CricketBall({ mousePosition }: { mousePosition: React.MutableRefObject<
           
           {/* Primary seam */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.005, 0.02, 12, 48]} />
+            <torusGeometry args={[1.005, 0.02, 8, 32]} />
             <meshStandardMaterial color="#f5f5dc" roughness={0.7} />
           </mesh>
           
           {/* Simplified glow ring */}
           <mesh scale={1.3}>
-            <ringGeometry args={[0.95, 1.05, 32]} />
+            <ringGeometry args={[0.95, 1.05, 24]} />
             <meshBasicMaterial color="#22c55e" transparent opacity={0.15} side={THREE.DoubleSide} />
           </mesh>
         </group>
@@ -95,7 +95,7 @@ function OrganicBlob({ position }: { position: [number, number, number] }) {
 
   return (
     <Float speed={0.5} rotationIntensity={0.1} floatIntensity={0.2}>
-      <Sphere ref={meshRef} args={[2, 32, 32]} position={position}>
+      <Sphere ref={meshRef} args={[2, 16, 16]} position={position}>
         <meshPhysicalMaterial
           color="#0a4a0a"
           roughness={0.4}
@@ -135,10 +135,10 @@ function EnergyRings() {
   )
 }
 
-// Floating geometric shapes - reduced count
+// Floating geometric shapes - reduced count and no wireframe
 function FloatingShapes() {
   const shapes = useMemo(() => {
-    return Array.from({ length: 8 }).map((_, i) => ({
+    return Array.from({ length: 4 }).map((_, i) => ({
       position: [
         (Math.random() - 0.5) * 16,
         (Math.random() - 0.5) * 12,
@@ -146,7 +146,7 @@ function FloatingShapes() {
       ] as [number, number, number],
       scale: 0.15 + Math.random() * 0.25,
       speed: 0.3 + Math.random() * 0.5,
-      type: i % 3
+      type: i % 2
     }))
   }, [])
 
@@ -157,14 +157,12 @@ function FloatingShapes() {
           <mesh position={shape.position} scale={shape.scale}>
             {shape.type === 0 && <octahedronGeometry args={[1, 0]} />}
             {shape.type === 1 && <tetrahedronGeometry args={[1, 0]} />}
-            {shape.type === 2 && <dodecahedronGeometry args={[1, 0]} />}
             <meshStandardMaterial 
               color={i % 2 === 0 ? "#22c55e" : "#eab308"}
               emissive={i % 2 === 0 ? "#22c55e" : "#eab308"}
               emissiveIntensity={0.2}
               transparent
               opacity={0.25}
-              wireframe
             />
           </mesh>
         </Float>
@@ -173,7 +171,7 @@ function FloatingShapes() {
   )
 }
 
-// Optimized Scene
+// Optimized Scene - Reduced lighting and particles
 function Scene({ mousePosition }: { mousePosition: React.MutableRefObject<{ x: number; y: number }> }) {
   const { camera } = useThree()
   const cameraTarget = useRef({ x: 0, y: 0 })
@@ -188,17 +186,15 @@ function Scene({ mousePosition }: { mousePosition: React.MutableRefObject<{ x: n
 
   return (
     <>
-      <Environment preset="night" />
       <fog attach="fog" args={["#050505", 10, 30]} />
       
-      {/* Optimized Lighting */}
+      {/* Reduced Lighting */}
       <ambientLight intensity={0.2} />
-      <pointLight position={[10, 10, 10]} intensity={2} color="#22c55e" />
-      <pointLight position={[-10, -10, -10]} intensity={1.5} color="#eab308" />
-      <spotLight position={[5, 15, 5]} angle={0.3} penumbra={1} intensity={3} color="#22c55e" />
+      <pointLight position={[10, 10, 10]} intensity={1.5} color="#22c55e" />
+      <pointLight position={[-10, -10, -10]} intensity={1} color="#eab308" />
       
-      {/* Reduced particle count stars */}
-      <Stars radius={80} depth={40} count={1000} factor={3} saturation={0} fade speed={0.5} />
+      {/* Reduced star count for performance */}
+      <Stars radius={80} depth={40} count={300} factor={3} saturation={0} fade speed={0.5} />
       
       {/* 3D Elements */}
       <CricketBall mousePosition={mousePosition} />
@@ -206,12 +202,9 @@ function Scene({ mousePosition }: { mousePosition: React.MutableRefObject<{ x: n
       <EnergyRings />
       <FloatingShapes />
       
-      {/* Reduced sparkles */}
-      <Sparkles count={80} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.4} />
-      <Sparkles count={40} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.25} />
-      
-      {/* Simplified Post Processing */}
-      
+      {/* Reduced sparkles for better performance */}
+      <Sparkles count={30} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
+      <Sparkles count={15} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
     </>
   )
 }
@@ -491,10 +484,11 @@ export default function HeroSection() {
             alpha: true, 
             powerPreference: "high-performance",
             stencil: false,
-            depth: true
+            depth: false,
+            preserveDrawingBuffer: false,
           }}
           dpr={[1, 1.5]}
-          frameloop="always"
+          frameloop="demand"
         >
           <Suspense fallback={null}>
             <Scene mousePosition={mousePositionRef} />

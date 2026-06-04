@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, Suspense, useMemo } from "react"
+import { useRef, Suspense, useMemo, useState, useEffect } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { 
   Float, 
@@ -12,7 +12,7 @@ import {
 } from "@react-three/drei"
 import * as THREE from "three"
 
-// Cricket Ball Component
+// Cricket Ball Component - Optimized
 function CricketBall() {
   const groupRef = useRef<THREE.Group>(null)
   const { viewport } = useThree()
@@ -32,15 +32,15 @@ function CricketBall() {
 
   return (
     <Trail
-      width={3}
-      length={10}
+      width={2}
+      length={8}
       color={new THREE.Color("#22c55e")}
       attenuation={(t) => t * t}
     >
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
         <group ref={groupRef} scale={0.8}>
           <mesh castShadow>
-            <sphereGeometry args={[1, 64, 64]} />
+            <sphereGeometry args={[1, 24, 24]} />
             <meshPhysicalMaterial
               color="#8B0000"
               roughness={0.3}
@@ -52,15 +52,15 @@ function CricketBall() {
             />
           </mesh>
           
-          {/* Seam */}
+          {/* Seam - Simplified */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.005, 0.02, 12, 48]} />
+            <torusGeometry args={[1.005, 0.02, 8, 32]} />
             <meshStandardMaterial color="#f5f5dc" roughness={0.7} />
           </mesh>
           
           {/* Glow ring */}
           <mesh scale={1.3}>
-            <ringGeometry args={[0.95, 1.05, 32]} />
+            <ringGeometry args={[0.95, 1.05, 24]} />
             <meshBasicMaterial color="#22c55e" transparent opacity={0.15} side={THREE.DoubleSide} />
           </mesh>
         </group>
@@ -69,7 +69,7 @@ function CricketBall() {
   )
 }
 
-// Organic Blob Component
+// Organic Blob Component - Simplified
 function OrganicBlob({ position }: { position: [number, number, number] }) {
   const meshRef = useRef<THREE.Mesh>(null)
   
@@ -82,7 +82,7 @@ function OrganicBlob({ position }: { position: [number, number, number] }) {
 
   return (
     <Float speed={0.5} rotationIntensity={0.1} floatIntensity={0.2}>
-      <Sphere ref={meshRef} args={[2, 32, 32]} position={position}>
+      <Sphere ref={meshRef} args={[2, 16, 16]} position={position}>
         <meshPhysicalMaterial
           color="#0a4a0a"
           emissive="#0a4a0a"
@@ -97,20 +97,19 @@ function OrganicBlob({ position }: { position: [number, number, number] }) {
   )
 }
 
-// Energy Rings Component
+// Energy Rings Component - Reduced complexity
 function EnergyRings() {
   return (
     <>
-      {[0, 1, 2].map((i) => (
+      {[0, 1].map((i) => (
         <mesh key={i} scale={2 + i * 1.5} rotation={[Math.PI * 0.3, 0, Math.PI * 0.4]}>
-          <ringGeometry args={[4 + i * 2, 4.3 + i * 2, 64]} />
+          <ringGeometry args={[4 + i * 2, 4.3 + i * 2, 32]} />
           <meshStandardMaterial
             color={i % 2 === 0 ? "#22c55e" : "#eab308"}
             emissive={i % 2 === 0 ? "#22c55e" : "#eab308"}
             emissiveIntensity={0.1}
             transparent
             opacity={0.1}
-            wireframe
           />
         </mesh>
       ))}
@@ -118,10 +117,10 @@ function EnergyRings() {
   )
 }
 
-// Floating Shapes Component
+// Floating Shapes Component - Fewer, simpler shapes
 function FloatingShapes() {
   const shapes = useMemo(() => {
-    return Array.from({ length: 6 }).map((_, i) => ({
+    return Array.from({ length: 4 }).map((_, i) => ({
       position: [
         (Math.random() - 0.5) * 16,
         (Math.random() - 0.5) * 12,
@@ -129,7 +128,7 @@ function FloatingShapes() {
       ] as [number, number, number],
       scale: 0.15 + Math.random() * 0.25,
       speed: 0.3 + Math.random() * 0.5,
-      type: i % 3
+      type: i % 2
     }))
   }, [])
 
@@ -140,14 +139,12 @@ function FloatingShapes() {
           <mesh position={shape.position} scale={shape.scale}>
             {shape.type === 0 && <octahedronGeometry args={[1, 0]} />}
             {shape.type === 1 && <tetrahedronGeometry args={[1, 0]} />}
-            {shape.type === 2 && <dodecahedronGeometry args={[1, 0]} />}
             <meshStandardMaterial 
               color={i % 2 === 0 ? "#22c55e" : "#eab308"}
               emissive={i % 2 === 0 ? "#22c55e" : "#eab308"}
               emissiveIntensity={0.2}
               transparent
               opacity={0.25}
-              wireframe
             />
           </mesh>
         </Float>
@@ -171,17 +168,15 @@ function CricketBackgroundScene() {
 
   return (
     <>
-      <Environment preset="night" />
       <fog attach="fog" args={["#050505", 10, 30]} />
       
-      {/* Lighting */}
+      {/* Lighting - Reduced count and intensity */}
       <ambientLight intensity={0.2} />
-      <pointLight position={[10, 10, 10]} intensity={2} color="#22c55e" />
-      <pointLight position={[-10, -10, -10]} intensity={1.5} color="#eab308" />
-      <spotLight position={[5, 15, 5]} angle={0.3} penumbra={1} intensity={3} color="#22c55e" />
+      <pointLight position={[10, 10, 10]} intensity={1.5} color="#22c55e" />
+      <pointLight position={[-10, -10, -10]} intensity={1} color="#eab308" />
       
-      {/* Background Elements */}
-      <Stars radius={80} depth={40} count={1000} factor={3} saturation={0} fade speed={0.5} />
+      {/* Background Elements - Reduced complexity */}
+      <Stars radius={80} depth={40} count={400} factor={3} saturation={0} fade speed={0.5} />
       
       {/* 3D Cricket Elements */}
       <CricketBall />
@@ -189,15 +184,23 @@ function CricketBackgroundScene() {
       <EnergyRings />
       <FloatingShapes />
       
-      {/* Sparkles */}
-      <Sparkles count={80} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.4} />
-      <Sparkles count={40} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.25} />
+      {/* Sparkles - Significantly reduced */}
+      <Sparkles count={40} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
+      <Sparkles count={20} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
     </>
   )
 }
 
 // Export Component
 export function Cricket3DBackground() {
+  const [shouldRender, setShouldRender] = useState(false)
+
+  useEffect(() => {
+    setShouldRender(true)
+  }, [])
+
+  if (!shouldRender) return null
+
   return (
     <div className="absolute inset-0 z-0">
       <Canvas
@@ -207,10 +210,11 @@ export function Cricket3DBackground() {
           alpha: true, 
           powerPreference: "high-performance",
           stencil: false,
-          depth: true
+          depth: false,
+          preserveDrawingBuffer: false,
         }}
         dpr={[1, 1.5]}
-        frameloop="always"
+        frameloop="demand"
       >
         <Suspense fallback={null}>
           <CricketBackgroundScene />

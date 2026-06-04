@@ -504,7 +504,7 @@ function TimelineCard({ item, index, isVisible }: { item: typeof journeyData[0];
                   style={{ backgroundColor: item.color }}
                   initial={{ width: 0 }}
                   animate={{ width: isVisible ? "100%" : "0%" }}
-                  transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+                  transition={{ duration: 1.5, delay: 0.5 }}
                 />
               </div>
             </div>

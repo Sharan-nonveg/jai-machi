@@ -84,7 +84,7 @@ export function CustomCursor() {
             x: cursorPosition.x - 24,
             y: cursorPosition.y - 24,
           }}
-          transition={{ duration: 0.1, ease: 'easeOut' }}
+          transition={{ duration: 0.1 }}
           style={{
             boxShadow: '0 0 20px rgba(34, 197, 94, 0.5)',
           }}

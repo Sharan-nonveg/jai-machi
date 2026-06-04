@@ -22,7 +22,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: 'easeOut' },
+    transition: { duration: 0.6 },
   },
 }
 
@@ -50,10 +50,10 @@ export function CTASection() {
       const result = await sendContactEmail(formData)
       
       if (result.success) {
-        setFeedback({ type: 'success', message: result.message })
+        setFeedback({ type: 'success', message: result.message || 'Email sent successfully!' })
         setFormData({ name: '', email: '', message: '' })
       } else {
-        setFeedback({ type: 'error', message: result.error })
+        setFeedback({ type: 'error', message: result.error || 'An error occurred' })
       }
     } catch (error) {
       console.error('[v0] Form submission error:', error)
