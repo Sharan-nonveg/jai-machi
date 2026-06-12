@@ -28,7 +28,7 @@ const journeyData = [
   },
   { 
     year: "2010", 
-    title: "FIRST STEPS", 
+    title: "STARTING STEPS", 
     location: "Bettal School",
     description: "The foundation years. Where curiosity met learning, and a young mind began to bloom.",
     type: "education",
