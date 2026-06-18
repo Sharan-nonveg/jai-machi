@@ -2,6 +2,7 @@
 
 import { useRef, Suspense, useMemo, useState, useEffect } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { isMobile } from "@/lib/device-utils"
 import { 
   Float, 
   Sphere, 
@@ -40,7 +41,7 @@ function CricketBall() {
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
         <group ref={groupRef} scale={0.8}>
           <mesh castShadow>
-            <sphereGeometry args={[1, 24, 24]} />
+            <sphereGeometry args={[1, 16, 16]} />
             <meshPhysicalMaterial
               color="#8B0000"
               roughness={0.3}
@@ -54,7 +55,7 @@ function CricketBall() {
           
           {/* Seam - Simplified */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.005, 0.02, 8, 32]} />
+            <torusGeometry args={[1.005, 0.02, 6, 20]} />
             <meshStandardMaterial color="#f5f5dc" roughness={0.7} />
           </mesh>
           
@@ -120,7 +121,7 @@ function EnergyRings() {
 // Floating Shapes Component - Fewer, simpler shapes
 function FloatingShapes() {
   const shapes = useMemo(() => {
-    return Array.from({ length: 4 }).map((_, i) => ({
+    return Array.from({ length: 2 }).map((_, i) => ({
       position: [
         (Math.random() - 0.5) * 16,
         (Math.random() - 0.5) * 12,
@@ -176,7 +177,7 @@ function CricketBackgroundScene() {
       <pointLight position={[-10, -10, -10]} intensity={1} color="#eab308" />
       
       {/* Background Elements - Reduced complexity */}
-      <Stars radius={80} depth={40} count={400} factor={3} saturation={0} fade speed={0.5} />
+      <Stars radius={80} depth={40} count={150} factor={3} saturation={0} fade speed={0.5} />
       
       {/* 3D Cricket Elements */}
       <CricketBall />
@@ -185,8 +186,8 @@ function CricketBackgroundScene() {
       <FloatingShapes />
       
       {/* Sparkles - Significantly reduced */}
-      <Sparkles count={40} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
-      <Sparkles count={20} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
+      <Sparkles count={15} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
+      <Sparkles count={8} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
     </>
   )
 }
@@ -194,12 +195,22 @@ function CricketBackgroundScene() {
 // Export Component
 export function Cricket3DBackground() {
   const [shouldRender, setShouldRender] = useState(false)
+  const [mobile, setMobile] = useState(false)
 
   useEffect(() => {
     setShouldRender(true)
+    setMobile(isMobile())
   }, [])
 
   if (!shouldRender) return null
+
+  if (mobile) return (
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-radial from-green-950/30 via-background to-background" />
+      <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-green-500/5 animate-pulse" />
+      <div className="absolute bottom-1/3 left-1/4 w-32 h-32 rounded-full bg-yellow-500/5 animate-pulse" style={{animationDelay:'2s'}} />
+    </div>
+  )
 
   return (
     <div className="absolute inset-0 z-0">
@@ -213,8 +224,9 @@ export function Cricket3DBackground() {
           depth: false,
           preserveDrawingBuffer: false,
         }}
-        dpr={[1, 1.5]}
-        frameloop="demand"
+        dpr={[1, 1]}
+        frameloop="always"
+        performance={{ min: 0.5 }}
       >
         <Suspense fallback={null}>
           <CricketBackgroundScene />

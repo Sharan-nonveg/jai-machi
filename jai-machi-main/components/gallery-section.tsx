@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring } from "framer-motion"
 import Image from "next/image"
 import { X, ChevronLeft, ChevronRight, Play, Pause, Camera, Zap, Focus } from "lucide-react"
@@ -154,9 +154,16 @@ export function GallerySection() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const [activeCategory, setActiveCategory] = useState("All")
   const containerRef = useRef<HTMLDivElement>(null)
   const filmstripRef = useRef<HTMLDivElement>(null)
   
+  const filteredImages = useMemo(() => {
+    return activeCategory === "All"
+      ? galleryImages
+      : galleryImages.filter((img) => img.category === activeCategory)
+  }, [activeCategory])
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"],
@@ -169,10 +176,10 @@ export function GallerySection() {
   useEffect(() => {
     if (!isAutoPlaying) return
     const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % galleryImages.length)
+      setActiveIndex((prev) => (prev + 1) % filteredImages.length)
     }, 4000)
     return () => clearInterval(interval)
-  }, [isAutoPlaying])
+  }, [isAutoPlaying, filteredImages.length])
 
   // Scroll filmstrip to active item
   useEffect(() => {
@@ -200,13 +207,13 @@ export function GallerySection() {
   const navigateGallery = (direction: "prev" | "next") => {
     setIsAutoPlaying(false)
     if (direction === "prev") {
-      setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))
+      setActiveIndex((prev) => (prev === 0 ? filteredImages.length - 1 : prev - 1))
     } else {
-      setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))
+      setActiveIndex((prev) => (prev === filteredImages.length - 1 ? 0 : prev + 1))
     }
   }
 
-  const currentImage = galleryImages[activeIndex]
+  const currentImage = filteredImages[activeIndex]
 
   return (
     <section ref={containerRef} id="gallery" className="relative min-h-screen bg-background overflow-hidden">
@@ -265,7 +272,7 @@ export function GallerySection() {
             >
               <div className="flex items-center gap-6">
                 <div className="text-right">
-                  <div className="text-3xl font-black text-foreground">{galleryImages.length}</div>
+                  <div className="text-3xl font-black text-foreground">{filteredImages.length}</div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider">Moments</div>
                 </div>
                 <div className="w-px h-12 bg-border" />
@@ -360,7 +367,7 @@ export function GallerySection() {
                   <span className="px-3 py-1 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 text-xs font-medium text-primary uppercase tracking-wider">
                     {currentImage.category}
                   </span>
-                  <span className="text-sm text-white/60">{String(activeIndex + 1).padStart(2, '0')} / {String(galleryImages.length).padStart(2, '0')}</span>
+                  <span className="text-sm text-white/60">{String(activeIndex + 1).padStart(2, '0')} / {String(filteredImages.length).padStart(2, '0')}</span>
                 </div>
                 <h3 className="text-2xl md:text-4xl font-black text-white mb-1">{currentImage.title}</h3>
                 <p className="text-white/70">{currentImage.subtitle}</p>
@@ -385,7 +392,7 @@ export function GallerySection() {
             <motion.div
               className="h-full bg-gradient-to-r from-primary to-yellow-500"
               initial={{ width: "0%" }}
-              animate={{ width: isAutoPlaying ? "100%" : `${((activeIndex + 1) / galleryImages.length) * 100}%` }}
+              animate={{ width: isAutoPlaying ? "100%" : `${((activeIndex + 1) / filteredImages.length) * 100}%` }}
               transition={isAutoPlaying ? { duration: 4 } : { duration: 0.3 }}
               key={isAutoPlaying ? `auto-${activeIndex}` : 'manual'}
             />
@@ -408,7 +415,7 @@ export function GallerySection() {
                 className="flex-1 flex gap-3 overflow-x-auto scrollbar-hide py-2 px-2"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {galleryImages.map((image, index) => (
+                {filteredImages.map((image, index) => (
                   <FilmstripThumbnail
                     key={image.id}
                     image={image}
@@ -451,17 +458,32 @@ export function GallerySection() {
               
               if (count === 0 && category !== 'All') return null
               
+              const isSelected = activeCategory === category
+
               return (
                 <motion.button
                   key={category}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all"
+                  onClick={() => {
+                    setActiveCategory(category)
+                    setActiveIndex(0)
+                    setIsAutoPlaying(false)
+                  }}
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30"
+                      : "bg-card/50 border-border/50 hover:border-primary/50 hover:bg-primary/5"
+                  }`}
                 >
-                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className={`text-sm font-medium transition-colors ${
+                    isSelected ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                  }`}>
                     {category}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  <span className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
+                    isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                  }`}>
                     {count}
                   </span>
                 </motion.button>
@@ -493,7 +515,7 @@ export function GallerySection() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                setSelectedImage((prev) => (prev === 0 ? galleryImages.length - 1 : (prev ?? 0) - 1))
+                setSelectedImage((prev) => (prev === 0 ? filteredImages.length - 1 : (prev ?? 0) - 1))
               }}
               className="absolute left-4 md:left-8 z-40 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
             >
@@ -502,7 +524,7 @@ export function GallerySection() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                setSelectedImage((prev) => ((prev ?? 0) === galleryImages.length - 1 ? 0 : (prev ?? 0) + 1))
+                setSelectedImage((prev) => ((prev ?? 0) === filteredImages.length - 1 ? 0 : (prev ?? 0) + 1))
               }}
               className="absolute right-4 md:right-8 z-40 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
             >
@@ -520,8 +542,8 @@ export function GallerySection() {
               onClick={(e) => e.stopPropagation()}
             >
               <Image
-                src={galleryImages[selectedImage].src}
-                alt={galleryImages[selectedImage].title}
+                src={filteredImages[selectedImage].src}
+                alt={filteredImages[selectedImage].title}
                 width={1920}
                 height={1080}
                 className="max-w-full max-h-[85vh] object-contain rounded-lg"
@@ -531,17 +553,17 @@ export function GallerySection() {
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent rounded-b-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-xs font-medium text-primary">
-                    {galleryImages[selectedImage].category}
+                    {filteredImages[selectedImage].category}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-white">{galleryImages[selectedImage].title}</h3>
-                <p className="text-white/70">{galleryImages[selectedImage].subtitle}</p>
+                <h3 className="text-xl font-bold text-white">{filteredImages[selectedImage].title}</h3>
+                <p className="text-white/70">{filteredImages[selectedImage].subtitle}</p>
               </div>
             </motion.div>
 
             {/* Thumbnail strip */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 rounded-full bg-black/50 backdrop-blur-sm">
-              {galleryImages.map((img, index) => (
+              {filteredImages.map((img, index) => (
                 <button
                   key={img.id}
                   onClick={(e) => {

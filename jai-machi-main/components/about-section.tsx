@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Float, Environment, Sparkles, Stars } from "@react-three/drei"
 import * as THREE from "three"
+import { isMobile } from "@/lib/device-utils"
 
 // Journey data - Updated with all education details
 const journeyData = [
@@ -140,7 +141,7 @@ function OrbitalRing({ radius, speed, color, thickness = 0.02 }: { radius: numbe
 
   return (
     <mesh ref={ringRef}>
-      <torusGeometry args={[radius, thickness, 16, 100]} />
+      <torusGeometry args={[radius, thickness, 6, 20]} />
       <meshStandardMaterial
         color={color}
         emissive={color}
@@ -168,7 +169,7 @@ function CricketBall({ position, scale = 1 }: { position: [number, number, numbe
       <group ref={ballRef} position={position} scale={scale}>
         {/* Main ball */}
         <mesh>
-          <sphereGeometry args={[0.5, 32, 32]} />
+          <sphereGeometry args={[0.5, 16, 16]} />
           <meshStandardMaterial 
             color="#dc2626" 
             roughness={0.3}
@@ -177,7 +178,7 @@ function CricketBall({ position, scale = 1 }: { position: [number, number, numbe
         </mesh>
         {/* Seam - horizontal ring */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.51, 0.03, 8, 32]} />
+          <torusGeometry args={[0.51, 0.03, 6, 20]} />
           <meshStandardMaterial color="#f5f5dc" emissive="#f5f5dc" emissiveIntensity={0.3} />
         </mesh>
         {/* Cross stitches on seam */}
@@ -208,7 +209,7 @@ function CricketStumps({ position }: { position: [number, number, number] }) {
         {/* Three stumps */}
         {[-0.3, 0, 0.3].map((x, i) => (
           <mesh key={i} position={[x, 0, 0]}>
-            <cylinderGeometry args={[0.05, 0.05, 2.5, 16]} />
+            <cylinderGeometry args={[0.05, 0.05, 2.5, 8]} />
             <meshStandardMaterial 
               color="#d4a574" 
               emissive="#eab308"
@@ -220,7 +221,7 @@ function CricketStumps({ position }: { position: [number, number, number] }) {
         {/* Bails */}
         {[-0.15, 0.15].map((x, i) => (
           <mesh key={i} position={[x, 1.35, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.03, 0.03, 0.25, 8]} />
+            <cylinderGeometry args={[0.03, 0.03, 0.25, 6]} />
             <meshStandardMaterial 
               color="#eab308" 
               emissive="#eab308"
@@ -293,30 +294,25 @@ function FloatingCricketElements() {
       {/* Cricket balls scattered around */}
       <CricketBall position={[-12, 3, -10]} scale={0.8} />
       <CricketBall position={[10, -2, -8]} scale={0.6} />
-      <CricketBall position={[-8, -5, -12]} scale={0.7} />
-      <CricketBall position={[15, 5, -15]} scale={0.5} />
-      <CricketBall position={[-5, 8, -8]} scale={0.9} />
       
       {/* Cricket stumps */}
       <CricketStumps position={[8, -3, -10]} />
-      <CricketStumps position={[-10, 5, -12]} />
       
       {/* Cricket bats */}
       <CricketBat position={[-6, 2, -6]} rotation={[0.3, 0.5, 0.2]} />
-      <CricketBat position={[12, -4, -8]} rotation={[-0.2, -0.8, 0.1]} />
-      <CricketBat position={[5, 6, -10]} rotation={[0.4, 0.2, -0.3]} />
     </group>
   )
 }
 
 // Main 3D Scene
-function AboutScene({ scrollProgress }: { scrollProgress: number }) {
+function AboutScene({ scrollProgress }: { scrollProgress: any }) {
   const { camera } = useThree()
   
   useFrame((state) => {
+    const progress = typeof scrollProgress === 'number' ? scrollProgress : scrollProgress.get()
     camera.position.x = Math.sin(state.clock.elapsedTime * 0.05) * 2
-    camera.position.y = scrollProgress * -5
-    camera.lookAt(0, scrollProgress * -5, 0)
+    camera.position.y = progress * -5
+    camera.lookAt(0, progress * -5, 0)
   })
 
   return (
@@ -327,7 +323,7 @@ function AboutScene({ scrollProgress }: { scrollProgress: number }) {
       <pointLight position={[-10, -10, -10]} intensity={1.5} color="#eab308" />
       <spotLight position={[0, 20, 0]} intensity={1} color="#ffffff" angle={0.3} penumbra={1} />
       
-      <Stars radius={150} depth={80} count={1500} factor={4} saturation={0} fade speed={0.2} />
+      <Stars radius={150} depth={80} count={150} factor={4} saturation={0} fade speed={0.2} />
       <FloatingCricketElements />
       
       {/* Central cricket ball with orbital rings */}
@@ -339,8 +335,8 @@ function AboutScene({ scrollProgress }: { scrollProgress: number }) {
         <CricketBall position={[0, 0, 0]} scale={1.2} />
       </group>
       
-      <Sparkles count={100} scale={40} size={2} speed={0.1} color="#22c55e" opacity={0.4} />
-      <Sparkles count={50} scale={30} size={1.5} speed={0.08} color="#eab308" opacity={0.3} />
+      <Sparkles count={15} scale={40} size={2} speed={0.1} color="#22c55e" opacity={0.4} />
+      <Sparkles count={8} scale={30} size={1.5} speed={0.08} color="#eab308" opacity={0.3} />
       
       
     </>
@@ -512,27 +508,33 @@ function TimelineCard({ item, index, isVisible }: { item: typeof journeyData[0];
           
           {/* Floating particles */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 rounded-full"
-                style={{ 
-                  backgroundColor: item.color,
-                  left: `${20 + Math.random() * 60}%`,
-                  top: `${20 + Math.random() * 60}%`,
-                }}
-                animate={{
-                  y: [0, -20, 0],
-                  opacity: [0, 0.6, 0],
-                  scale: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-              />
-            ))}
+            {Array.from({ length: 5 }).map((_, i) => {
+              const left = 20 + ((i * 17) % 60)
+              const top = 20 + ((i * 23) % 60)
+              const duration = 2 + (i % 2)
+              const delay = (i % 3) * 0.5
+              return (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full"
+                  style={{ 
+                    backgroundColor: item.color,
+                    left: `${left}%`,
+                    top: `${top}%`,
+                  }}
+                  animate={{
+                    y: [0, -20, 0],
+                    opacity: [0, 0.6, 0],
+                    scale: [0, 1, 0],
+                  }}
+                  transition={{
+                    duration,
+                    repeat: Infinity,
+                    delay,
+                  }}
+                />
+              )
+            })}
           </div>
         </motion.div>
       </motion.div>
@@ -580,7 +582,8 @@ function TimelineCard({ item, index, isVisible }: { item: typeof journeyData[0];
 }
 
 // Vertical Timeline Line
-function TimelineLine({ progress }: { progress: number }) {
+function TimelineLine({ progress }: { progress: any }) {
+  const progressHeight = useTransform(progress, [0, 1], ["0%", "100%"])
   return (
     <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px]">
       {/* Background line */}
@@ -590,7 +593,7 @@ function TimelineLine({ progress }: { progress: number }) {
       <motion.div
         className="absolute top-0 left-0 right-0 bg-gradient-to-b from-primary via-accent to-primary"
         style={{ 
-          height: `${progress * 100}%`,
+          height: progressHeight,
           boxShadow: '0 0 20px rgba(34, 197, 94, 0.5)'
         }}
       />
@@ -599,7 +602,7 @@ function TimelineLine({ progress }: { progress: number }) {
       <motion.div
         className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary"
         style={{ 
-          top: `${progress * 100}%`,
+          top: progressHeight,
           boxShadow: '0 0 15px rgba(34, 197, 94, 0.8), 0 0 30px rgba(34, 197, 94, 0.4)'
         }}
         animate={{
@@ -726,7 +729,8 @@ function JourneyStats({ isVisible }: { isVisible: boolean }) {
 // Main About Section Component
 export default function AboutSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [scrollProgress, setScrollProgress] = useState(0)
+  const [mobile, setMobile] = useState(false)
+  const [inView, setInView] = useState(false)
   const isInView = useInView(containerRef, { once: false, margin: "-10%" })
   
   const { scrollYProgress } = useScroll({
@@ -737,11 +741,23 @@ export default function AboutSection() {
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 50, damping: 20 })
   
   useEffect(() => {
-    const unsubscribe = smoothProgress.on("change", (latest) => {
-      setScrollProgress(latest)
-    })
-    return () => unsubscribe()
-  }, [smoothProgress])
+    setMobile(isMobile())
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting)
+      },
+      { rootMargin: '200px' }
+    )
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   return (
     <section 
@@ -751,15 +767,26 @@ export default function AboutSection() {
     >
       {/* 3D Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <Canvas
-          camera={{ position: [0, 0, 20], fov: 50 }}
-          gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
-          dpr={[1, 1.5]}
-        >
-          <Suspense fallback={null}>
-            <AboutScene scrollProgress={scrollProgress} />
-          </Suspense>
-        </Canvas>
+        {mobile ? (
+          <div className="absolute inset-0 bg-gradient-radial from-green-950/20 via-background to-background">
+            <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-green-500/5 animate-pulse" />
+            <div className="absolute bottom-1/3 left-1/4 w-32 h-32 rounded-full bg-yellow-500/5 animate-pulse" style={{animationDelay:'2s'}} />
+          </div>
+        ) : (
+          inView && (
+            <Canvas
+              camera={{ position: [0, 0, 20], fov: 50 }}
+              gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+              dpr={[1, 1]}
+              frameloop="always"
+              performance={{ min: 0.5 }}
+            >
+              <Suspense fallback={null}>
+                <AboutScene scrollProgress={smoothProgress} />
+              </Suspense>
+            </Canvas>
+          )
+        )}
       </div>
       
       {/* Gradient overlays */}
@@ -785,7 +812,7 @@ export default function AboutSection() {
         {/* Timeline */}
         <div className="relative">
           {/* Vertical Timeline Line */}
-          <TimelineLine progress={scrollProgress} />
+          <TimelineLine progress={smoothProgress} />
           
           {/* Timeline Cards */}
           <div className="space-y-8 md:space-y-16">

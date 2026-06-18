@@ -9,18 +9,18 @@ import { Shared3DBackground } from "./shared-3d-background"
 const certificates = [
   {
     id: 1,
-    title: "8th All India National Goa Gold Cup",
-    subtitle: "T20 Cricket Championship 2021",
-    type: "Championship",
-    date: "October 19-22, 2021",
-    location: "Madgaon, Goa",
-    achievement: "Team Winners",
-    organization: "T20 Cricket Association Goa",
-    description: "Certificate of Merit for outstanding participation in the All India National Goa Gold Cup T20 Cricket Championship, representing Team Karnataka.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-kIOqtpa5ZQqPpBM65X0c3VuSvmQRzO.png",
-    color: "from-amber-500 to-yellow-600",
-    icon: Trophy,
-    badge: "NATIONAL",
+    title: "KSCA State Selection",
+    subtitle: "Karnataka State Cricket Association",
+    type: "Selection",
+    date: "February 14, 2026",
+    location: "Delhi Match - April 23, 2026",
+    achievement: "State Representative",
+    organization: "KSCA Selection Committee",
+    description: "Official selection letter from the Karnataka State Cricket Association (KSCA) Selection Committee confirming selection to represent the KSCA in the upcoming match in Delhi on April 23, 2026.",
+    image: "/achievements/media__1781717215090.png",
+    color: "from-sky-500 to-blue-600",
+    icon: Award,
+    badge: "STATE",
     isPortrait: false,
   },
   {
@@ -32,8 +32,8 @@ const certificates = [
     location: "Bengaluru, Karnataka",
     achievement: "Selected Player",
     organization: "Karnataka Cricket Board",
-    description: "Official selection letter congratulating on being chosen to represent the District Cricket Team for the upcoming season based on impressive performance during selection trials.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-CqMrsLRoTCCEMrjk96yQM6IeV7HNwb.png",
+    description: "Official selection letter from the District Selection Committee congratulating on being selected to represent the District Cricket Team for the upcoming season.",
+    image: "/achievements/media__1781717222042.png",
     color: "from-emerald-500 to-green-600",
     icon: Medal,
     badge: "DISTRICT",
@@ -41,34 +41,34 @@ const certificates = [
   },
   {
     id: 3,
-    title: "Star Performer Feature",
-    subtitle: "CricHeroes Times",
-    type: "Media Coverage",
-    date: "July 5, 2026",
-    location: "Bengaluru",
-    achievement: "39(30) | 7 Fours",
-    organization: "CricHeroes Times",
-    description: "Featured as Star Performer in NEON AURA's 54-run victory over NEON GENESIS. Exceptional innings earning the prestigious 'Cool Thirty' badge.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-OdfjTr7opXCTZprbLC1ahWkEQ5P7Be.png",
+    title: "Official Briefing & Kit Selection",
+    subtitle: "Karnataka Cricket Board",
+    type: "Briefing",
+    date: "October 25, 2025",
+    location: "District Cricket Ground, Bengaluru",
+    achievement: "Briefing & Kit Distribution",
+    organization: "District Selection Committee",
+    description: "Official instruction request to report to the District Cricket Association Ground on October 25, 2025 at 9:00 AM for the official team briefing and kit distribution.",
+    image: "/achievements/media__1781717227344.png",
     color: "from-violet-500 to-purple-600",
     icon: Star,
-    badge: "FEATURED",
+    badge: "DISTRICT",
     isPortrait: false,
   },
   {
     id: 4,
-    title: "KSCA State Selection",
-    subtitle: "Karnataka State Cricket Association",
-    type: "Selection",
-    date: "February 14, 2026",
-    location: "Delhi Match - April 23, 2026",
-    achievement: "State Representative",
-    organization: "KSCA Selection Committee",
-    description: "Official selection to represent Karnataka State Cricket Association (KSCA) in the prestigious Delhi match, recognizing consistent performance, discipline, and dedication.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-rnqa4gJ6vCZIcxKZHZ9uAhUQOokvXs.png",
-    color: "from-sky-500 to-blue-600",
-    icon: Award,
-    badge: "STATE",
+    title: "8th All India National Goa Gold Cup",
+    subtitle: "T20 Cricket Championship 2021",
+    type: "Championship",
+    date: "October 19-22, 2021",
+    location: "Madgaon, Goa",
+    achievement: "Team Winners",
+    organization: "T20 Cricket Association Goa",
+    description: "Certificate of Merit/Participation for outstanding performance in the 8th All India National Goa Gold Cup T20 Cricket Championship held at Madgaon, Goa, under the banner of the T20 Cricket Association of India.",
+    image: "/achievements/media__1781717232240.jpg",
+    color: "from-amber-500 to-yellow-600",
+    icon: Trophy,
+    badge: "NATIONAL",
     isPortrait: false,
   },
 ]
@@ -289,17 +289,17 @@ export function CertificatesSection() {
 
                   <div className={`flex flex-col ${cert.isPortrait ? '' : 'sm:flex-row'}`}>
                     {/* Image Section */}
-                    <div className={`relative w-full ${cert.isPortrait ? 'aspect-[3/4]' : 'sm:w-2/5 aspect-video sm:aspect-auto'} overflow-hidden`}>
+                    <div className={`relative w-full ${cert.isPortrait ? 'aspect-[3/4]' : 'sm:w-[30%] aspect-[16/10] sm:aspect-auto'} overflow-hidden bg-white/5 p-2`}>
                       <motion.div
-                        className="absolute inset-0"
-                        animate={{ scale: isHovered ? 1.1 : 1 }}
+                        className="absolute inset-2"
+                        animate={{ scale: isHovered ? 1.05 : 1 }}
                         transition={{ duration: 0.5 }}
                       >
                         <Image
                           src={cert.image}
                           alt={cert.title}
                           fill
-                          className={`${cert.isPortrait ? 'object-contain bg-white' : 'object-cover'}`}
+                          className="object-contain"
                         />
                       </motion.div>
                       {/* Image Overlay */}
@@ -396,10 +396,10 @@ export function CertificatesSection() {
           className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {[
-            { label: "Certificates", value: "4+", icon: Award },
+            { label: "Certificates", value: "4", icon: Award },
             { label: "Championships", value: "1", icon: Trophy },
-            { label: "State Selections", value: "2", icon: Medal },
-            { label: "Media Features", value: "1", icon: Star },
+            { label: "State Selections", value: "1", icon: Medal },
+            { label: "District Selections", value: "2", icon: Star },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring, useMotionValue } from "framer-motion"
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring, useMotionValue, useMotionTemplate } from "framer-motion"
 
 const navItems = [
   { name: "Home", href: "#home" },
@@ -43,49 +43,68 @@ export default function Navbar() {
   const [activeSection, setActiveSection] = useState("home")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  
+  const mousePositionX = useMotionValue(0)
+  const mousePositionY = useMotionValue(0)
   const { scrollY } = useScroll()
   const navRef = useRef<HTMLElement>(null)
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 50)
+    const shouldScroll = latest > 50
+    if (shouldScroll !== isScrolled) {
+      setIsScrolled(shouldScroll)
+    }
   })
 
+  // IntersectionObserver for scroll-spying active sections
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = navItems.map((item) => item.href.substring(1))
-      const scrollPosition = window.scrollY + 100
+    const sections = navItems.map((item) => item.href.substring(1))
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: "-25% 0px -55% 0px", // Trigger when section is in active viewing area
+      threshold: [0, 0.1, 0.2],
+    }
 
-      for (const section of sections) {
-        const element = document.getElementById(section)
-        if (element) {
-          const { offsetTop, offsetHeight } = element
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section)
-            break
-          }
-        }
+    const activeSections: Record<string, boolean> = {}
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        activeSections[entry.target.id] = entry.isIntersecting
+      })
+
+      // Find the first intersecting section or fall back to the highest visible one
+      const currentActive = sections.find((section) => activeSections[section])
+      if (currentActive) {
+        setActiveSection(currentActive)
       }
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    const observer = new IntersectionObserver(observerCallback, observerOptions)
+
+    sections.forEach((section) => {
+      const element = document.getElementById(section)
+      if (element) observer.observe(element)
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (navRef.current) {
         const rect = navRef.current.getBoundingClientRect()
-        setMousePosition({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        })
+        mousePositionX.set(e.clientX - rect.left)
+        mousePositionY.set(e.clientY - rect.top)
       }
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mousemove", handleMouseMove, { passive: true })
     return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [])
+  }, [mousePositionX, mousePositionY])
+
+  const mouseFollowBg = useMotionTemplate`radial-gradient(600px circle at ${mousePositionX}px ${mousePositionY}px, rgba(34, 197, 94, 0.06), transparent 40%)`
+  const borderGlowBg = useMotionTemplate`radial-gradient(400px circle at ${mousePositionX}px ${mousePositionY}px, rgba(34, 197, 94, 0.15), transparent 40%)`
 
   const handleNavClick = (href: string) => {
     setIsMobileMenuOpen(false)
@@ -120,7 +139,7 @@ export default function Navbar() {
           <motion.div
             className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 transition-opacity duration-500"
             style={{
-              background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.06), transparent 40%)`,
+              background: mouseFollowBg,
               opacity: isScrolled ? 1 : 0,
             }}
           />
@@ -129,7 +148,7 @@ export default function Navbar() {
           <motion.div
             className="absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500"
             style={{
-              background: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.15), transparent 40%)`,
+              background: borderGlowBg,
               opacity: isScrolled ? 1 : 0,
             }}
           />
@@ -195,17 +214,6 @@ export default function Navbar() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center">
               <div className="relative flex items-center bg-white/[0.02] rounded-xl p-1 border border-white/5">
-                {/* Active pill background */}
-                <motion.div
-                  className="absolute h-[calc(100%-8px)] bg-white/5 rounded-lg border border-white/10"
-                  layoutId="activeNavPill"
-                  style={{
-                    width: 80,
-                    left: navItems.findIndex(item => item.href.substring(1) === activeSection) * 80 + 4,
-                  }}
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-
                 {navItems.map((item, i) => {
                   const isActive = activeSection === item.href.substring(1)
                   const isHovered = hoveredItem === item.name
@@ -226,6 +234,15 @@ export default function Navbar() {
                       transition={{ delay: 0.7 + i * 0.05 }}
                       whileHover={{ y: -1 }}
                     >
+                      {/* Active pill background */}
+                      {isActive && (
+                        <motion.div
+                          className="absolute inset-0 bg-white/5 rounded-lg border border-white/10 z-0"
+                          layoutId="activeNavPill"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+
                       {/* Hover gradient */}
                       <AnimatePresence>
                         {isHovered && !isActive && (

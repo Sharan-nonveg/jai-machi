@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, Suspense, useMemo, useCallback } from "react"
 import { motion, useMotionValue, useSpring, AnimatePresence } from "framer-motion"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { isMobile } from "@/lib/device-utils"
 import { 
   Float, 
   Sphere, 
@@ -53,7 +54,7 @@ function CricketBall({ mousePosition }: { mousePosition: React.MutableRefObject<
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
         <group ref={groupRef} scale={0.9}>
           <mesh castShadow>
-            <sphereGeometry args={[1, 24, 24]} />
+            <sphereGeometry args={[1, 16, 16]} />
             <meshPhysicalMaterial
               color="#8B0000"
               roughness={0.3}
@@ -67,7 +68,7 @@ function CricketBall({ mousePosition }: { mousePosition: React.MutableRefObject<
           
           {/* Primary seam */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.005, 0.02, 8, 32]} />
+            <torusGeometry args={[1.005, 0.02, 6, 20]} />
             <meshStandardMaterial color="#f5f5dc" roughness={0.7} />
           </mesh>
           
@@ -138,7 +139,7 @@ function EnergyRings() {
 // Floating geometric shapes - reduced count and no wireframe
 function FloatingShapes() {
   const shapes = useMemo(() => {
-    return Array.from({ length: 4 }).map((_, i) => ({
+    return Array.from({ length: 2 }).map((_, i) => ({
       position: [
         (Math.random() - 0.5) * 16,
         (Math.random() - 0.5) * 12,
@@ -194,7 +195,7 @@ function Scene({ mousePosition }: { mousePosition: React.MutableRefObject<{ x: n
       <pointLight position={[-10, -10, -10]} intensity={1} color="#eab308" />
       
       {/* Reduced star count for performance */}
-      <Stars radius={80} depth={40} count={300} factor={3} saturation={0} fade speed={0.5} />
+      <Stars radius={80} depth={40} count={150} factor={3} saturation={0} fade speed={0.5} />
       
       {/* 3D Elements */}
       <CricketBall mousePosition={mousePosition} />
@@ -203,8 +204,8 @@ function Scene({ mousePosition }: { mousePosition: React.MutableRefObject<{ x: n
       <FloatingShapes />
       
       {/* Reduced sparkles for better performance */}
-      <Sparkles count={30} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
-      <Sparkles count={15} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
+      <Sparkles count={15} scale={15} size={2} speed={0.2} color="#22c55e" opacity={0.3} />
+      <Sparkles count={8} scale={12} size={1.5} speed={0.15} color="#eab308" opacity={0.2} />
     </>
   )
 }
@@ -366,6 +367,8 @@ export default function HeroSection() {
   const mousePositionRef = useRef({ x: 0, y: 0 })
   const [isLoaded, setIsLoaded] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
+  const [mobile, setMobile] = useState(false)
+  const [inView, setInView] = useState(true)
   
   const cursorX = useMotionValue(0)
   const cursorY = useMotionValue(0)
@@ -374,6 +377,7 @@ export default function HeroSection() {
 
   // Loading animation - faster
   useEffect(() => {
+    setMobile(isMobile())
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 100) {
@@ -385,6 +389,21 @@ export default function HeroSection() {
       })
     }, 15)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting)
+      },
+      { rootMargin: '200px' }
+    )
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    return () => observer.disconnect()
   }, [])
 
   // Throttled mouse move handler
@@ -477,23 +496,33 @@ export default function HeroSection() {
 
       {/* 3D Canvas - optimized settings */}
       <div className="absolute inset-0 z-0">
-        <Canvas
-          camera={{ position: [0, 0, 12], fov: 45 }}
-          gl={{ 
-            antialias: false,
-            alpha: true, 
-            powerPreference: "high-performance",
-            stencil: false,
-            depth: false,
-            preserveDrawingBuffer: false,
-          }}
-          dpr={[1, 1.5]}
-          frameloop="demand"
-        >
-          <Suspense fallback={null}>
-            <Scene mousePosition={mousePositionRef} />
-          </Suspense>
-        </Canvas>
+        {mobile ? (
+          <div className="absolute inset-0 bg-gradient-radial from-green-950/30 via-background to-background">
+            <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-green-500/5 animate-pulse" />
+            <div className="absolute bottom-1/3 left-1/4 w-32 h-32 rounded-full bg-yellow-500/5 animate-pulse" style={{animationDelay:'2s'}} />
+          </div>
+        ) : (
+          inView && (
+            <Canvas
+              camera={{ position: [0, 0, 12], fov: 45 }}
+              gl={{ 
+                antialias: false,
+                alpha: true, 
+                powerPreference: "high-performance",
+                stencil: false,
+                depth: false,
+                preserveDrawingBuffer: false,
+              }}
+              dpr={[1, 1]}
+              frameloop="always"
+              performance={{ min: 0.5 }}
+            >
+              <Suspense fallback={null}>
+                <Scene mousePosition={mousePositionRef} />
+              </Suspense>
+            </Canvas>
+          )
+        )}
       </div>
 
       {/* Gradient Overlays */}
@@ -666,7 +695,7 @@ export default function HeroSection() {
 
         {/* Bottom Elements */}
         <motion.div
-          className="absolute bottom-8 left-0 right-0 flex justify-between items-end px-6 md:px-12 lg:px-24"
+          className="relative mt-auto w-full flex justify-between items-end px-6 md:px-12 lg:px-24 pb-8"
           initial={{ opacity: 0 }}
           animate={isLoaded ? { opacity: 1 } : {}}
           transition={{ delay: 1.4 }}

@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { isMobile } from '@/lib/device-utils'
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const duration = isMobile() ? 800 : 2000
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 2000)
+    }, duration)
 
     return () => clearTimeout(timer)
   }, [])

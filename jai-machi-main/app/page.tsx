@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { CTASection } from "@/components/cta-section"
 import { PremiumFooter } from "@/components/premium-footer"
@@ -13,17 +14,42 @@ const AchievementsSection = dynamic(() => import("@/components/achievements-sect
 const CertificatesSection = dynamic(() => import("@/components/certificates-section").then(mod => ({ default: mod.CertificatesSection })), { ssr: false })
 const GallerySection = dynamic(() => import("@/components/gallery-section").then(mod => ({ default: mod.GallerySection })), { ssr: false })
 
+function LazySection({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const ob = new IntersectionObserver(([e]) => { if(e.isIntersecting){setShow(true);ob.disconnect()} }, {rootMargin:'200px'})
+    if(ref.current) ob.observe(ref.current)
+    return () => ob.disconnect()
+  }, [])
+  return <div ref={ref}>{show ? children : <div className="min-h-screen"/>}</div>
+}
+
 export default function Home() {
   return (
     <main>
       <Navbar />
       <HeroSection />
       <AboutSection />
-      <CricketJourneySection />
-      <PerformanceStatsSection />
-      <AchievementsSection />
+      
+      <LazySection>
+        <CricketJourneySection />
+      </LazySection>
+      
+      <LazySection>
+        <PerformanceStatsSection />
+      </LazySection>
+      
+      <LazySection>
+        <AchievementsSection />
+      </LazySection>
+      
       <CertificatesSection />
-      <GallerySection />
+      
+      <LazySection>
+        <GallerySection />
+      </LazySection>
+      
       <CTASection />
       <PremiumFooter />
     </main>

@@ -47,8 +47,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background scroll-smooth">
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground custom-cursor`}>
+    <html lang="en" className="bg-background scroll-smooth" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground custom-cursor`} suppressHydrationWarning>
         <LoadingScreen />
         <ScrollProgress />
         <CustomCursor />

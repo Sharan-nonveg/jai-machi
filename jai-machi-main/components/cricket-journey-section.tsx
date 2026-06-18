@@ -1,7 +1,8 @@
 "use client"
 
-import { useRef, useState, Suspense, useMemo } from "react"
+import { useRef, useState, useEffect, Suspense, useMemo } from "react"
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion"
+import { isMobile } from "@/lib/device-utils"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Float, Sparkles, Stars, Trail } from "@react-three/drei"
 import * as THREE from "three"
@@ -330,13 +331,14 @@ function GlowingRings() {
 }
 
 // Main 3D Scene
-function JourneyScene({ scrollProgress }: { scrollProgress: number }) {
+function JourneyScene({ scrollProgress }: { scrollProgress: any }) {
   const { camera } = useThree()
   
   useFrame((state) => {
+    const progress = typeof scrollProgress === 'number' ? scrollProgress : scrollProgress.get()
     camera.position.x = Math.sin(state.clock.elapsedTime * 0.08) * 3
-    camera.position.y = scrollProgress * -3 + Math.cos(state.clock.elapsedTime * 0.05) * 0.5
-    camera.lookAt(0, scrollProgress * -2, -5)
+    camera.position.y = progress * -3 + Math.cos(state.clock.elapsedTime * 0.05) * 0.5
+    camera.lookAt(0, progress * -2, -5)
   })
 
   return (
@@ -347,7 +349,7 @@ function JourneyScene({ scrollProgress }: { scrollProgress: number }) {
       <pointLight position={[-10, -10, -10]} intensity={2} color="#eab308" />
       <spotLight position={[0, 20, 0]} intensity={1.5} color="#ffffff" angle={0.4} penumbra={1} />
       
-      <Stars radius={100} depth={60} count={2000} factor={5} saturation={0} fade speed={0.3} />
+      <Stars radius={100} depth={60} count={150} factor={5} saturation={0} fade speed={0.3} />
       
       <StadiumLights />
       <CricketPitch />
@@ -356,8 +358,8 @@ function JourneyScene({ scrollProgress }: { scrollProgress: number }) {
       <ParticleField />
       <GlowingRings />
       
-      <Sparkles count={150} scale={50} size={3} speed={0.15} color="#22c55e" opacity={0.5} />
-      <Sparkles count={100} scale={40} size={2} speed={0.1} color="#eab308" opacity={0.4} />
+      <Sparkles count={15} scale={50} size={3} speed={0.15} color="#22c55e" opacity={0.5} />
+      <Sparkles count={8} scale={40} size={2} speed={0.1} color="#eab308" opacity={0.4} />
       
       
     </>
@@ -1003,28 +1005,36 @@ function ConstellationGalaxyTimeline() {
 
         {/* Distant stars background */}
         <div className="absolute inset-0 pointer-events-none">
-          {Array.from({ length: 100 }).map((_, i) => (
-            <motion.div
-              key={`bg-star-${i}`}
-              className="absolute rounded-full bg-white"
-              style={{
-                width: Math.random() * 2 + 1,
-                height: Math.random() * 2 + 1,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.5 + 0.2
-              }}
-              animate={{
-                opacity: [0.2, 0.8, 0.2],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{
-                duration: 2 + Math.random() * 3,
-                repeat: Infinity,
-                delay: Math.random() * 2
-              }}
-            />
-          ))}
+          {Array.from({ length: 100 }).map((_, i) => {
+            const size = 1 + (i % 2)
+            const x = (i * 17.3) % 100
+            const y = (i * 29.7) % 100
+            const initialOpacity = 0.2 + (i % 5) * 0.1
+            const duration = 2 + (i % 3)
+            const delay = (i % 2)
+            return (
+              <motion.div
+                key={`bg-star-${i}`}
+                className="absolute rounded-full bg-white pointer-events-none"
+                style={{
+                  width: size,
+                  height: size,
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  opacity: initialOpacity
+                }}
+                animate={{
+                  opacity: [0.2, 0.8, 0.2],
+                  scale: [1, 1.2, 1]
+                }}
+                transition={{
+                  duration,
+                  repeat: Infinity,
+                  delay
+                }}
+              />
+            )
+          })}
         </div>
 
         {/* SVG Galaxy Map */}
@@ -1453,6 +1463,25 @@ export default function CricketJourneySection() {
   const sectionRef = useRef<HTMLElement>(null)
   const headerRef = useRef(null)
   const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" })
+  const [isMob, setIsMob] = useState(false)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    setIsMob(isMobile())
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting)
+      },
+      { rootMargin: '200px' }
+    )
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
   
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -1460,7 +1489,8 @@ export default function CricketJourneySection() {
   })
   
   const scrollProgress = useTransform(scrollYProgress, [0, 1], [0, 1])
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50])
+  const yTransform = useTransform(scrollYProgress, [0, 1], [0, -50])
+  const y = isMob ? 0 : yTransform
 
   const allAcademies = [...currentAssociations, ...previousAssociations]
 
@@ -1473,11 +1503,33 @@ export default function CricketJourneySection() {
     >
       {/* 3D Background */}
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
-          <Suspense fallback={null}>
-            <JourneyScene scrollProgress={scrollProgress.get()} />
-          </Suspense>
-        </Canvas>
+        {isMob ? (
+          <div className="absolute inset-0 bg-gradient-radial from-green-950/20 via-background to-background">
+            <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-green-500/5 animate-pulse" />
+            <div className="absolute bottom-1/3 left-1/4 w-32 h-32 rounded-full bg-yellow-500/5 animate-pulse" style={{animationDelay:'2s'}} />
+          </div>
+        ) : (
+          inView && (
+            <Canvas
+              camera={{ position: [0, 0, 15], fov: 60 }}
+              gl={{ 
+                antialias: false,
+                alpha: true, 
+                powerPreference: "high-performance",
+                stencil: false,
+                depth: false,
+                preserveDrawingBuffer: false,
+              }}
+              dpr={[1, 1]}
+              frameloop="always"
+              performance={{ min: 0.5 }}
+            >
+              <Suspense fallback={null}>
+                <JourneyScene scrollProgress={scrollProgress} />
+              </Suspense>
+            </Canvas>
+          )
+        )}
       </div>
       
       {/* Content overlay */}

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion"
+import { motion, AnimatePresence, useInView, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, Play, Pause, Maximize2, Grid3X3, LayoutGrid } from "lucide-react"
+import { useMemo } from "react"
 
 interface GalleryImage {
   id: number
@@ -120,14 +121,16 @@ const categories = ["All", "Match Day", "Training Sessions", "Team Moments", "To
 
 // Floating particles component
 function FloatingParticles() {
-  const particles = Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 4 + 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 10 + 10,
-    delay: Math.random() * 5
-  }))
+  const particles = useMemo(() => 
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      size: 2 + (i % 4),
+      x: (i * 7.1) % 100,
+      y: (i * 13.1) % 100,
+      duration: 10 + (i % 10),
+      delay: (i % 5)
+    })), []
+  )
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -349,14 +352,30 @@ function GalleryItem({
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: "-50px" })
   const [isHovered, setIsHovered] = useState(false)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 300, damping: 30 })
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), { stiffness: 300, damping: 30 })
+
+  const spotX = useTransform(mouseX, [-0.5, 0.5], ["0%", "100%"])
+  const spotY = useTransform(mouseY, [-0.5, 0.5], ["0%", "100%"])
+  const spotlightBg = useMotionTemplate`radial-gradient(circle at ${spotX} ${spotY}, rgba(34, 197, 94, 0.3) 0%, transparent 50%)`
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width - 0.5
     const y = (e.clientY - rect.top) / rect.height - 0.5
-    setMousePosition({ x, y })
+    mouseX.set(x)
+    mouseY.set(y)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    mouseX.set(0)
+    mouseY.set(0)
   }
 
   const getAspectClass = () => {
@@ -389,7 +408,7 @@ function GalleryItem({
       }}
       className={`relative group cursor-pointer ${getSpanClass()}`}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setMousePosition({ x: 0, y: 0 }) }}
+      onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       onClick={onClick}
     >
@@ -397,10 +416,10 @@ function GalleryItem({
         className={`relative overflow-hidden rounded-xl ${getAspectClass()}`}
         style={{
           transformStyle: "preserve-3d",
+          rotateX: isHovered ? rotateX : 0,
+          rotateY: isHovered ? rotateY : 0,
         }}
         animate={{
-          rotateX: isHovered ? mousePosition.y * -10 : 0,
-          rotateY: isHovered ? mousePosition.x * 10 : 0,
           scale: isHovered ? 1.02 : 1,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -430,7 +449,7 @@ function GalleryItem({
           <motion.div
             className="absolute inset-0 bg-gradient-radial from-cricket-green/20 via-transparent to-transparent"
             style={{
-              background: `radial-gradient(circle at ${(mousePosition.x + 0.5) * 100}% ${(mousePosition.y + 0.5) * 100}%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)`
+              background: spotlightBg
             }}
             animate={{ opacity: isHovered ? 1 : 0 }}
           />

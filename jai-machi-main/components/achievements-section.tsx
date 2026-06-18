@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect, useCallback } from "react"
+import { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import { motion, useInView, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
 
@@ -20,7 +20,7 @@ const certificates = [
     title: "District Level Championship",
     category: "tournaments",
     date: "2024",
-    image: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/tournament-trophy.png",
     description: "Winner - U-17 District Cricket Championship",
   },
   {
@@ -28,7 +28,7 @@ const certificates = [
     title: "BCCI Coaching Certificate",
     category: "certifications",
     date: "2024",
-    image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/cricket-certificate.png",
     description: "Level 1 Cricket Coaching Certification",
   },
   {
@@ -36,7 +36,7 @@ const certificates = [
     title: "Academy Excellence Award",
     category: "academy",
     date: "2023",
-    image: "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/academy-award.png",
     description: "Best All-Rounder of the Year",
   },
   {
@@ -44,7 +44,7 @@ const certificates = [
     title: "State Team Selection",
     category: "teams",
     date: "2024",
-    image: "https://images.unsplash.com/photo-1593766827228-8737b4534aa6?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/state-team-jersey.png",
     description: "Selected for State U-19 Cricket Team",
   },
   {
@@ -52,7 +52,7 @@ const certificates = [
     title: "Inter-School Championship",
     category: "competitive",
     date: "2024",
-    image: "https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/championship-medal.png",
     description: "Runner-up - Regional Inter-School Tournament",
   },
   {
@@ -60,7 +60,7 @@ const certificates = [
     title: "Summer Cricket Camp",
     category: "academy",
     date: "2023",
-    image: "https://images.unsplash.com/photo-1594470117722-de4b9a02ebed?w=800&h=600&fit=crop&q=80",
+    image: "/achievements/cricket-camp-badge.png",
     description: "Outstanding Performance Certificate",
   },
 ]
@@ -75,7 +75,7 @@ function FloatingParticle({ delay, duration, size, left }: { delay: number; dura
         height: size,
         left: `${left}%`,
         bottom: "-20px",
-        background: `radial-gradient(circle, rgba(34, 197, 94, ${0.3 + Math.random() * 0.4}) 0%, transparent 70%)`,
+        background: `radial-gradient(circle, rgba(34, 197, 94, ${0.3 + (size / 24)}) 0%, transparent 70%)`,
         boxShadow: `0 0 ${size * 2}px rgba(34, 197, 94, 0.3)`,
       }}
       initial={{ y: 0, opacity: 0, scale: 0 }}
@@ -548,14 +548,16 @@ export function AchievementsSection() {
   const [selectedCertificate, setSelectedCertificate] = useState<typeof certificates[0] | null>(null)
   const [activeFilter, setActiveFilter] = useState<string>("all")
 
-  // Generate particles
-  const particles = Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    delay: Math.random() * 10,
-    duration: 8 + Math.random() * 8,
-    size: 4 + Math.random() * 8,
-    left: Math.random() * 100,
-  }))
+  // Generate particles once
+  const particles = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      delay: (i * 0.33) % 10,
+      duration: 8 + (i * 0.27) % 8,
+      size: 4 + (i * 0.15) % 8,
+      left: (i * 3.33) % 100,
+    }))
+  }, [])
 
   const filteredCertificates = activeFilter === "all" 
     ? certificates 
